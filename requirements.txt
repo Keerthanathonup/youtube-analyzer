@@ -1,6 +1,10 @@
+echo "fastapi
+uvicorn
+sqlalchemy
+jinja2
+python-dotenv
+requests
 google-api-python-client
 youtube-transcript-api
-python-dotenv
-openai
-flask
-sqlalchemy
+anthropic
+python-multipart" > requirements.txt

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}{{ video.title }} - Analysis{% endblock %}
+
+{% block content %}
+<div class="video-analysis">
+    <div class="video-header">
+        <h1>{{ video.title }}</h1>
+        <div class="video-meta">
+            {% if video.channel_title %}
+                <p class="channel">{{ video.channel_title }}</p>
+            {% endif %}
+            {% if video.published_at %}
+                <p class="date">Published on {{ video.published_at.strftime('%b %d, %Y') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="video-content">
+        <div class="video-player">
+            <iframe 
+                width="100%" 
+                height="315" 
+                src="https://www.youtube.com/embed/{{ video.id }}" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        </div>
+        
+        {% if video.summary %}
+        <div class="analysis-tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="summary">Summary</button>
+                <button class="tab-btn" data-tab="key-points">Key Points</button>
+                <button class="tab-btn" data-tab="topics">Topics</button>
+                <button class="tab-btn" data-tab="sentiment">Sentiment</button>
+            </div>
+            
+            <div class="tab-content">
+                <div class="tab-panel active" id="summary">
+                    <div class="summary-type-selector">
+                        <button class="summary-btn active" data-summary="short">Short Summary</button>
+                        <button class="summary-btn" data-summary="detailed">Detailed Summary</button>
+                    </div>
+                    
+                    <div class="summary-content active" id="short-summary">
+                        <p>{{ summary.short_summary }}</p>
+                    </div>
+                    
+                    <div class="summary-content" id="detailed-summary">
+                        <p>{{ summary.detailed_summary }}</p>
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="key-points">
+                    <ul class="key-points-list">
+                        {% if summary.key_points %}
+                            {% for point in summary.key_points %}
+                            <li>
+                                <span class="key-point-text">{{ point.text }}</span>
+                                {% if point.timestamp %}
+                                <a href="https://www.youtube.com/watch?v={{ video.id }}&t={{ point.timestamp }}s" 
+                                   target="_blank" class="timestamp-link">
+                                    {{ format_timestamp(point.timestamp) }}
+                                </a>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li>No key points available for this video.</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="tab-panel" id="topics">
+                    <div class="topics-container">
+                        {% if summary.topics %}
+                            {% for topic in summary.topics %}
+                            <span class="topic-tag">{{ topic }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <p>No topics identified for this video.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="sentiment">
+                    <div class="sentiment-display {{ summary.sentiment.lower() if summary.sentiment else 'neutral' }}">
+                        <p class="sentiment-label">{{ summary.sentiment if summary.sentiment else 'Neutral' }}</p>
+                        <div class="sentiment-meter">
+                            <div class="sentiment-bar" style="width: {{ sentiment_percentage }}%;"></div>
+                        </div>
+                        <p class="sentiment-description">{{ sentiment_description }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="analysis-pending">
+            <p>Analysis for this video is not yet available. Please try again later.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Debug information - Remove in production -->
+{% if debug %}
+<div style="margin-top: 2rem; padding: 1rem; background-color: #f8f9fa; border: 1px solid #dee2e6;">
+    <h3>Debug Information</h3>
+    <p>Video ID: {{ video.id }}</p>
+    <p>Video Title: {{ video.title }}</p>
+    <p>Channel Title: {{ video.channel_title }}</p>
+    <p>Summary Available: {{ video.summary is not none }}</p>
+    {% if video.summary %}
+        <p>Sentiment: {{ video.summary.sentiment }}</p>
+        <p>sentiment_percentage: {{ sentiment_percentage }}</p>
+        <p>Key Points Type: {{ video.summary.key_points.__class__.__name__ }}</p>
+        <p>Topics Type: {{ video.summary.topics.__class__.__name__ }}</p>
+        <p>Key Points: {{ video.summary.key_points }}</p>
+        <p>Topics: {{ video.summary.topics }}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/video.js') }}"></script>
+{% endblock %}

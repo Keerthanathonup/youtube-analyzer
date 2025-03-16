@@ -1,0 +1,396 @@
+/* styles.css - Create this file in your static/css directory */
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+header {
+    background-color: #343a40;
+    color: white;
+    padding: 1rem 0;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    margin-left: 1rem;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+.hero {
+    background-color: #007bff;
+    color: white;
+    padding: 3rem 0;
+    text-align: center;
+}
+
+.search-form {
+    max-width: 600px;
+    margin: 2rem auto;
+    display: flex;
+}
+
+.search-form input[type="text"] {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.search-form button {
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    color: white;
+    border: 1px solid #007bff;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.search-form button:hover {
+    background-color: #0069d9;
+}
+
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.video-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: white;
+    transition: transform 0.2s;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 0;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    position: relative;
+    background-color: #f1f1f1;
+}
+
+.video-thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-info {
+    padding: 1rem;
+}
+
+.video-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 0.5rem;
+}
+
+.video-channel {
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.video-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-height: 1.5;
+}
+
+.video-actions {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: #007bff;
+    border: 1px solid #007bff;
+}
+
+.btn-outline:hover {
+    background-color: #f8f9fa;
+}
+
+.summary-card {
+    background-color: white;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.summary-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-section {
+    margin-bottom: 1.5rem;
+}
+
+.summary-section h3 {
+    font-size: 1.1rem;
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+.topic-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.topic-tag {
+    background-color: #e9ecef;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.sentiment {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.sentiment-positive {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.sentiment-negative {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.sentiment-neutral {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+footer {
+    background-color: #343a40;
+    color: white;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+.footer-section {
+    flex: 1;
+    margin-right: 2rem;
+}
+
+.footer-section:last-child {
+    margin-right: 0;
+}
+
+.footer-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.5rem;
+}
+
+.footer-links a {
+    color: #ddd;
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #495057;
+    font-size: 0.9rem;
+    color: #adb5bd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+    
+    .footer-content {
+        flex-direction: column;
+    }
+    
+    .footer-section {
+        margin-right: 0;
+        margin-bottom: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .video-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .search-form {
+        flex-direction: column;
+    }
+    
+    .search-form input[type="text"] {
+        border-right: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-form button {
+        border-radius: 4px;
+    }
+}
+/* Tab functionality styles */
+.tab-buttons {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: none;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.tab-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.summary-btn {
+    padding: 6px 12px;
+    background: none;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    margin-right: 5px;
+    font-size: 0.9rem;
+}
+
+.summary-btn.active {
+    background-color: #e9ecef;
+    border-color: #007bff;
+}
+
+.summary-content {
+    display: none;
+}
+
+.summary-content.active {
+    display: block;
+}
+
+.sentiment-meter {
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.sentiment-bar {
+    height: 100%;
+    background-color: #007bff;
+    border-radius: 5px;
+}

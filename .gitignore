@@ -1,6 +1,24 @@
-venv/ 
-__pycache__/ 
-*.py[cod] 
-.env 
-*.db 
-*.sqlite 
+echo "# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+
+# IDE files
+.idea/
+.vscode/
+
+# Logs
+*.log" > .gitignore

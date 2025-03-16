@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Home - YouTube Video Content Analyzer{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Don't watch, just understand.</h1>
+    <p>Get summaries, key points, and insights from any YouTube video in seconds.</p>
+    
+    <div class="search-container">
+        <form id="video-form" action="/analyze" method="post">
+            <input type="text" name="video_url" id="video_url" placeholder="Paste a YouTube video URL" required>
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
+</section>
+
+<section class="recent-videos">
+    <h2>Recently Analyzed Videos</h2>
+    <div class="video-grid" id="recent-videos-container">
+        {% for video in recent_videos %}
+        <div class="video-card">
+            <div class="thumbnail">
+                <a href="/video/{{ video.id }}">
+                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}">
+                    <span class="duration">{{ format_duration(video.duration_seconds) }}</span>
+                </a>
+            </div>
+            <div class="video-info">
+                <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
+                <p class="channel">{{ video.channel_title }}</p>
+                <p class="date">{{ video.published_at.strftime('%b %d, %Y') }}</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="no-videos">No videos have been analyzed yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/index.js') }}"></script>
+{% endblock %}
