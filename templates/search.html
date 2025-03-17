@@ -25,7 +25,12 @@
                 <div class="result-item">
                     <div class="thumbnail">
                         <a href="/video/{{ video.id }}">
-                            <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}">
+                            <!-- Use direct YouTube thumbnail URL -->
+                            <img 
+                                src="https://img.youtube.com/vi/{{ video.id }}/maxresdefault.jpg" 
+                                alt="{{ video.title }}"
+                                onerror="if(this.src != 'https://img.youtube.com/vi/{{ video.id }}/mqdefault.jpg') this.src = 'https://img.youtube.com/vi/{{ video.id }}/mqdefault.jpg';"
+                            >
                             <span class="duration">{{ format_duration(video.duration_seconds) }}</span>
                         </a>
                     </div>
@@ -34,8 +39,12 @@
                         <p class="channel">{{ video.channel_title }}</p>
                         <p class="date">{{ video.published_at.strftime('%b %d, %Y') if video.published_at else 'Unknown date' }}</p>
                         <div class="actions">
-                            <a href="/analyze/{{ video.id }}" class="analyze-btn">Analyze</a>
-                            <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" class="watch-btn">Watch on YouTube</a>
+                            <a href="/analyze/{{ video.id }}" class="analyze-btn">
+                                <i class="fas fa-chart-bar"></i> Analyze
+                            </a>
+                            <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" class="watch-btn">
+                                <i class="fab fa-youtube"></i> Watch on YouTube
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -69,4 +78,40 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Make sure Font Awesome is loaded for icons
+document.addEventListener('DOMContentLoaded', function() {
+    // If Font Awesome isn't loaded, add it dynamically
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css';
+        document.head.appendChild(link);
+    }
+    
+    // Style buttons if they don't have icons
+    const analyzeButtons = document.querySelectorAll('.analyze-btn');
+    analyzeButtons.forEach(btn => {
+        if (!btn.querySelector('i')) {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-chart-bar';
+            icon.style.marginRight = '6px';
+            btn.prepend(icon);
+        }
+    });
+    
+    const watchButtons = document.querySelectorAll('.watch-btn');
+    watchButtons.forEach(btn => {
+        if (!btn.querySelector('i')) {
+            const icon = document.createElement('i');
+            icon.className = 'fab fa-youtube';
+            icon.style.marginRight = '6px';
+            btn.prepend(icon);
+        }
+    });
+});
+</script>
 {% endblock %}

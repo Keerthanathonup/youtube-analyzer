@@ -3,8 +3,12 @@
 import os
 import requests
 import json
+import time
 import re
+import logging
 from typing import Dict, List, Any
+
+logger = logging.getLogger(__name__)
 
 class ClaudeService:
     """Service for interacting with Anthropic's Claude API to analyze video transcripts."""
@@ -24,48 +28,38 @@ class ClaudeService:
         # Default to Claude 3 Sonnet for good balance of capabilities and speed
         self.default_model = os.getenv("CLAUDE_MODEL", "claude-3-haiku-20240307")
     
-    def _call_claude_api(self, system_prompt: str, user_prompt: str, model: str = None, max_tokens: int = 1000) -> str:
-        """
-        Make a call to the Claude API.
+    def _call_claude_api(self, system_prompt: str, user_prompt: str, model: str = None, max_tokens: int = 1000, max_retries: int = 3) -> str:
+        retries = 0
+        while retries < max_retries:
+            try:
+                payload = {
+                    "model": model or self.default_model,
+                    "max_tokens": max_tokens,
+                    "system": system_prompt,
+                    "messages": [
+                        {"role": "user", "content": user_prompt}
+                    ]
+                }
+                
+                response = requests.post(
+                    self.base_url,
+                    headers=self.headers,
+                    json=payload
+                )
+                
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                response_json = response.json()
+                
+                # Extract the content from Claude's response
+                return response_json.get("content", [{"text": "No response from Claude"}])[0].get("text", "")
+                
+            except requests.exceptions.RequestException as e:
+                logger.error(f"API call failed (attempt {retries+1}/{max_retries}): {str(e)}")
+                retries += 1
+                time.sleep(2 * retries)  # Exponential backoff
         
-        Args:
-            system_prompt: Instructions for Claude
-            user_prompt: The user's message/content to analyze
-            model: Claude model to use (defaults to self.default_model)
-            max_tokens: Maximum tokens to generate
-            
-        Returns:
-            Claude's response text
-        """
-        try:
-            payload = {
-                "model": model or self.default_model,
-                "max_tokens": max_tokens,
-                "system": system_prompt,
-                "messages": [
-                    {"role": "user", "content": user_prompt}
-                ]
-            }
-            
-            response = requests.post(
-                self.base_url,
-                headers=self.headers,
-                json=payload
-            )
-            
-            response.raise_for_status()  # Raise an exception for HTTP errors
-            result = response.json()
-            
-            # Extract the content from Claude's response
-            return result.get("content", [{"text": "No response from Claude"}])[0].get("text", "")
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling Claude API: {str(e)}")
-            if hasattr(e, 'response') and e.response:
-                print(f"Response status: {e.response.status_code}")
-                print(f"Response body: {e.response.text}")
-            return f"Error: {str(e)}"
-    
+        return "Error: Failed after multiple retries"
+        
     def analyze_transcript(self, transcript: str, video_metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze video transcript using Claude API.

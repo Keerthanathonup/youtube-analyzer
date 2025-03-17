@@ -1,0 +1,108 @@
+<!-- templates/network.html -->
+{% extends "base.html" %}
+
+{% block title %}Content Network Visualization{% endblock %}
+
+{% block extra_css %}
+<!-- No additional CSS needed - network.css is already in base template -->
+{% endblock %}
+
+{% block content %}
+<div class="network-page">
+    <h1>Content Network Visualization</h1>
+    
+    {% if central_video %}
+    <div class="central-video-info mb-4">
+        <div class="d-flex">
+            <div class="central-video-thumbnail">
+                <img src="{{ central_video.thumbnail_url }}" alt="{{ central_video.title }}" onerror="this.src='/static/img/placeholder.png'">
+            </div>
+            <div class="central-video-details">
+                <h2 class="central-video-title">{{ central_video.title }}</h2>
+                <p class="central-video-channel">{{ central_video.channel_title }}</p>
+                <p class="central-video-description">{{ central_video.description|truncate(200) }}</p>
+                <div class="central-video-actions">
+                    <a href="/video/{{ central_video.id }}" class="btn btn-primary">View Details</a>
+                    <a href="https://www.youtube.com/watch?v={{ central_video.id }}" target="_blank" class="btn btn-outline">Watch on YouTube</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="insight-box">
+                <h4>Videos in Network</h4>
+                <p class="insight-value">{{ network_data.nodes|length if network_data else 0 }}</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="insight-box">
+                <h4>Connections</h4>
+                <p class="insight-value">{{ network_data.edges|length if network_data else 0 }}</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="insight-box">
+                <h4>Depth</h4>
+                <p class="insight-value">{{ network_depth if network_depth else 2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="network-container">
+        <div id="network-visualization"></div>
+        <div class="network-loading" id="network-loading">
+            <div class="spinner"></div>
+            <p>Loading network data...</p>
+        </div>
+        <div class="network-error" id="network-error" style="display: none;">
+            <p>Error loading network visualization.</p>
+            <p class="error-details" id="error-details"></p>
+        </div>
+    </div>
+    
+    {% if videos %}
+    <div class="mt-4">
+        <h3>Recent Videos</h3>
+        <div class="video-grid">
+            {% for video in videos %}
+            <div class="video-card">
+                <div class="thumbnail">
+                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}" onerror="this.src='/static/img/placeholder.png'">
+                </div>
+                <div class="video-info">
+                    <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
+                    <p class="channel">{{ video.channel_title }}</p>
+                    <div class="network-actions">
+                        <a href="/network/{{ video.id }}" class="view-network-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            View network
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/network_visualization.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize network visualization
+        {% if central_video %}
+        initNetworkVisualization('network-visualization', '/api/network/{{ central_video.id }}', '{{ central_video.id }}');
+        {% elif videos and videos|length > 0 %}
+        initNetworkVisualization('network-visualization', '/api/network/{{ videos[0].id }}');
+        {% else %}
+        document.getElementById('network-loading').innerHTML = '<p>No videos available to create network visualization.</p>';
+        {% endif %}
+    });
+</script>
+{% endblock %}

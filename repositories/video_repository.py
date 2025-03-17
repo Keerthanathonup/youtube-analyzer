@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
+import json
 
 from models.video import Video
 from models.video_summary import VideoSummary
@@ -306,3 +307,204 @@ class VideoRepository:
                 )
             )\
             .count()
+            
+    def get_related_videos(self, video_id: str, limit: int = 5) -> List[Video]:
+        """
+        Get videos related to the specified video.
+        
+        Args:
+            video_id: YouTube video ID
+            limit: Maximum number of related videos to return
+            
+        Returns:
+            List of related Video objects
+        """
+        # First check if we have explicit relationships stored
+        # This would require a new table like video_relationships
+        # For now, we'll use a simple query based on similar topics/content
+        
+        # Get the current video first to extract its topics
+        video = self.get_video_by_id(video_id)
+        if not video or not video.summary:
+            return []
+        
+        # Get topics from the video summary
+        topics = []
+        if hasattr(video.summary, 'topics') and video.summary.topics:
+            if isinstance(video.summary.topics, list):
+                topics = video.summary.topics
+            elif isinstance(video.summary.topics, str):
+                # Handle case where topics might be a JSON string
+                try:
+                    topics = json.loads(video.summary.topics)
+                except:
+                    topics = [video.summary.topics]
+        
+        if not topics:
+            # Fallback to searching by channel if no topics
+            return self.db.query(Video)\
+                .filter(Video.channel_title == video.channel_title)\
+                .filter(Video.id != video_id)\
+                .limit(limit)\
+                .all()
+        
+        # Search for videos that match any of the topics
+        # This requires the topics to be stored in a searchable format
+        # For now, we'll do a simple search on video titles and descriptions
+        search_terms = []
+        for topic in topics:
+            if isinstance(topic, dict) and 'name' in topic:
+                search_terms.append(topic['name'])
+            elif isinstance(topic, str):
+                search_terms.append(topic)
+        
+        if not search_terms:
+            return []
+        
+        # Build a query with OR conditions for each term
+        from sqlalchemy import or_
+        conditions = []
+        for term in search_terms:
+            term_like = f"%{term}%"
+            conditions.append(Video.title.ilike(term_like))
+            conditions.append(Video.description.ilike(term_like))
+        
+        return self.db.query(Video)\
+            .filter(or_(*conditions))\
+            .filter(Video.id != video_id)\
+            .limit(limit)\
+            .all()
+
+    def save_video_relationships(self, video_id: str, related_video_ids: List[str], 
+                                similarity_scores: Dict[str, float]) -> bool:
+        """
+        Save relationship data between videos.
+        
+        Args:
+            video_id: Source video ID
+            related_video_ids: List of related video IDs
+            similarity_scores: Dictionary mapping video IDs to similarity scores
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        # For proper implementation, you would need a video_relationships table
+        # This is a placeholder that shows how it would work
+        # You would need to create the table first
+        
+        # Example SQL that would be needed:
+        # CREATE TABLE video_relationships (
+        #     source_video_id VARCHAR NOT NULL,
+        #     target_video_id VARCHAR NOT NULL,
+        #     similarity_score FLOAT,
+        #     relationship_type VARCHAR,
+        #     PRIMARY KEY (source_video_id, target_video_id),
+        #     FOREIGN KEY (source_video_id) REFERENCES videos(id),
+        #     FOREIGN KEY (target_video_id) REFERENCES videos(id)
+        # )
+        
+        try:
+            # Check if VideoRelationship model exists
+            # If you create this model, uncomment and use this code
+            """
+            # Delete existing relationships for this video
+            self.db.query(VideoRelationship)\
+                .filter(VideoRelationship.source_video_id == video_id)\
+                .delete()
+            
+            # Create new relationship records
+            for related_id in related_video_ids:
+                if related_id == video_id:
+                    continue  # Skip self-relationship
+                    
+                score = similarity_scores.get(related_id, 0.0)
+                relationship = VideoRelationship(
+                    source_video_id=video_id,
+                    target_video_id=related_id,
+                    similarity_score=score,
+                    relationship_type="content_similarity"
+                )
+                self.db.add(relationship)
+            
+            self.db.commit()
+            """
+            
+            # For now, just log that we would save relationships
+            print(f"Would save {len(related_video_ids)} relationships for video {video_id}")
+            for related_id in related_video_ids:
+                score = similarity_scores.get(related_id, 0.0)
+                print(f"  - Related to {related_id} with score {score:.2f}")
+            
+            return True
+            
+        except Exception as e:
+            import traceback
+            print(f"Error saving video relationships: {str(e)}")
+            print(traceback.format_exc())
+            self.db.rollback()
+            return False
+
+    def get_video_network(self, video_id: str, depth: int = 1, max_videos: int = 20) -> Dict[str, Any]:
+        """
+        Get a network of videos related to the specified video.
+        
+        Args:
+            video_id: Starting video ID
+            depth: How many degrees of separation to include
+            max_videos: Maximum number of videos to include
+            
+        Returns:
+            Dictionary with nodes and edges for the network
+        """
+        # For proper implementation, you would query the video_relationships table
+        # This is a placeholder using the get_related_videos method
+        
+        visited = set()
+        nodes = []
+        edges = []
+        queue = [(video_id, 0)]  # (video_id, depth)
+        
+        while queue and len(nodes) < max_videos:
+            current_id, current_depth = queue.pop(0)
+            
+            if current_id in visited:
+                continue
+                
+            visited.add(current_id)
+            
+            # Get video details
+            video = self.get_video_by_id(current_id)
+            if not video:
+                continue
+                
+            # Add node
+            nodes.append({
+                "id": video.id,
+                "title": video.title,
+                "channel": video.channel_title,
+                "group": current_depth + 1  # For visualization grouping
+            })
+            
+            # If we've reached max depth, don't get related videos
+            if current_depth >= depth:
+                continue
+                
+            # Get related videos
+            related = self.get_related_videos(current_id, limit=5)
+            
+            for rel_video in related:
+                # Add edge
+                edges.append({
+                    "source": video.id,
+                    "target": rel_video.id,
+                    "value": 1  # Weight (would be similarity score in full implementation)
+                })
+                
+                # Add to queue for next iteration
+                if rel_video.id not in visited:
+                    queue.append((rel_video.id, current_depth + 1))
+                    
+        return {
+            "nodes": nodes,
+            "edges": edges
+        }

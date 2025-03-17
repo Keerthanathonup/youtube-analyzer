@@ -3,6 +3,7 @@
 from typing import Dict, List, Any, Optional
 import logging
 import config
+import re
 from services.claude_service import ClaudeService
 from services.transcription_service import TranscriptionService
 
@@ -54,6 +55,10 @@ class AnalysisService:
                     return self._generate_error_analysis(video_id, "Insufficient transcript and metadata")
             else:
                 return self._generate_error_analysis(video_id, "Insufficient transcript content for analysis")
+        # Add chunking for large transcripts
+        if transcript and len(transcript) > 6000:
+            logger.info(f"Large transcript detected ({len(transcript)} chars), using chunked analysis")
+            return self._analyze_large_transcript(transcript, video_metadata, video_id)
         
         # Use mock data if no API key is available
         if self.use_mock:
@@ -223,3 +228,180 @@ class AnalysisService:
             "sentiment_analysis": "Unable to analyze sentiment",
             "analysis_source": "error"
         }
+    def _analyze_large_transcript(self, transcript, video_metadata, video_id):
+        """
+        Break down large transcripts into chunks for analysis.
+        
+        Args:
+            transcript: Full transcript text
+            video_metadata: Dictionary with video metadata
+            video_id: YouTube video ID
+            
+        Returns:
+            Dictionary with combined analysis results
+        """
+        logger.info(f"Chunking large transcript ({len(transcript)} chars) for {video_id}")
+        
+        # Split transcript into chunks of ~4000 characters (preserving whole sentences)
+        chunks = []
+        current_chunk = ""
+        sentences = re.split(r'([.!?])', transcript)
+        
+        for i in range(0, len(sentences), 2):
+            if i+1 < len(sentences):
+                sentence = sentences[i] + sentences[i+1]
+            else:
+                sentence = sentences[i]
+                
+            if len(current_chunk) + len(sentence) < 4000:
+                current_chunk += sentence
+            else:
+                chunks.append(current_chunk)
+                current_chunk = sentence
+        
+        if current_chunk:
+            chunks.append(current_chunk)
+            
+        logger.info(f"Split transcript into {len(chunks)} chunks")
+        
+        # Analyze each chunk
+        results = []
+        for i, chunk in enumerate(chunks):
+            logger.info(f"Analyzing chunk {i+1}/{len(chunks)} ({len(chunk)} chars)")
+            
+            chunk_title = f"{video_metadata.get('title', '')} - Part {i+1}"
+            chunk_metadata = {
+                "title": chunk_title,
+                "description": video_metadata.get("description", ""),
+                "channel_title": video_metadata.get("channel_title", "")
+            }
+            
+            try:
+                # Use mock data if no API key is available
+                if self.use_mock:
+                    chunk_result = self._generate_mock_analysis(video_id, chunk_metadata)
+                else:
+                    chunk_result = self.claude_service.analyze_transcript(chunk, chunk_metadata)
+                    
+                results.append(chunk_result)
+            except Exception as e:
+                logger.error(f"Error analyzing chunk {i+1}: {str(e)}")
+        
+        # Combine results
+        if not results:
+            return self._generate_error_analysis(video_id, "Failed to analyze transcript chunks")
+        
+        combined_result = {
+            "video_id": video_id,
+            "summary": "",
+            "detailed_summary": "",
+            "key_points": [],
+            "topics": [],
+            "sentiment": self._combine_sentiments([r.get("sentiment", "neutral") for r in results]),
+            "sentiment_score": sum([r.get("sentiment_score", 0) for r in results]) / len(results),
+            "sentiment_analysis": ""
+        }
+        
+        # Combine summaries
+        summaries = [r.get("summary", "") for r in results]
+        combined_result["summary"] = self._combine_summaries(summaries)
+        combined_result["detailed_summary"] = combined_result["summary"]
+        
+        # Combine key points (take top 3 from each chunk, up to 10 total)
+        all_key_points = []
+        for result in results:
+            points = result.get("key_points", [])
+            if points:
+                all_key_points.extend(points[:3])
+        combined_result["key_points"] = all_key_points[:10]
+        
+        # Combine topics (take most common across all chunks)
+        all_topics = []
+        for result in results:
+            topics = result.get("topics", [])
+            if isinstance(topics, list):
+                for topic in topics:
+                    if isinstance(topic, dict) and "name" in topic:
+                        all_topics.append(topic["name"])
+                    elif isinstance(topic, str):
+                        all_topics.append(topic)
+        
+        # Count topic occurrences
+        topic_counts = {}
+        for topic in all_topics:
+            if topic in topic_counts:
+                topic_counts[topic] += 1
+            else:
+                topic_counts[topic] = 1
+        
+        # Take the most common topics
+        top_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        combined_result["topics"] = [{"name": topic, "description": "", "confidence": count * 20} 
+                                    for topic, count in top_topics]
+        
+        # Combine sentiment analysis texts
+        sentiment_analyses = [r.get("sentiment_analysis", "") for r in results if r.get("sentiment_analysis")]
+        if sentiment_analyses:
+            combined_result["sentiment_analysis"] = sentiment_analyses[0]
+        
+        return combined_result
+
+    def _combine_summaries(self, summaries):
+        """Combine multiple summaries into a single coherent summary."""
+        if not summaries:
+            return ""
+        
+        if len(summaries) == 1:
+            return summaries[0]
+        
+        combined = ""
+        total_length = sum(len(s) for s in summaries)
+        
+        if total_length <= 150:
+            # If total is short, just join them
+            combined = " ".join(summaries)
+        else:
+            # Otherwise, take the first one and add key sentences from others
+            combined = summaries[0]
+            
+            for summary in summaries[1:]:
+                sentences = re.split(r'([.!?])', summary)
+                
+                # Join sentences back together
+                sentences_joined = []
+                for i in range(0, len(sentences), 2):
+                    if i+1 < len(sentences):
+                        sentences_joined.append(sentences[i] + sentences[i+1])
+                    else:
+                        sentences_joined.append(sentences[i])
+                
+                # Take the first sentence from each additional summary
+                if sentences_joined:
+                    combined += " " + sentences_joined[0]
+        
+        return combined
+
+    def _combine_sentiments(self, sentiments):
+        """Determine the overall sentiment from multiple chunk sentiments."""
+        if not sentiments:
+            return "neutral"
+        
+        # Count occurrences
+        sentiment_counts = {}
+        for sentiment in sentiments:
+            lower_sentiment = sentiment.lower()
+            if lower_sentiment in sentiment_counts:
+                sentiment_counts[lower_sentiment] += 1
+            else:
+                sentiment_counts[lower_sentiment] = 1
+        
+        # Find the most common sentiment
+        max_count = 0
+        most_common = "neutral"
+        
+        for sentiment, count in sentiment_counts.items():
+            if count > max_count:
+                max_count = count
+                most_common = sentiment
+        
+        return most_common

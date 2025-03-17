@@ -1,0 +1,36 @@
+2025-03-16 20:49:00,584 - transcript_diagnostic - INFO - Checking environment...
+2025-03-16 20:49:02,314 - transcript_diagnostic - INFO - Testing YouTube API...
+2025-03-16 20:49:02,316 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-16 20:49:02,690 - services.youtube_service - WARNING - No video found with ID: YOUR_VIDEO_ID
+2025-03-16 20:49:02,693 - transcript_diagnostic - ERROR - Diagnostic failed: 'status'
+Traceback (most recent call last):
+  File "C:\Users\gunda\kittu\youtube-analyzer\transcript_diagnostic.py", line 435, in main
+    print(f"- Transcript Retrieval: {results['transcript_retrieval']['status']}")
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+KeyError: 'status'
+2025-03-16 20:49:49,579 - transcript_diagnostic - INFO - Checking environment...
+2025-03-16 20:49:50,253 - transcript_diagnostic - INFO - Testing YouTube API...
+2025-03-16 20:49:50,256 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-16 20:49:50,697 - transcript_diagnostic - INFO - Testing transcript retrieval...
+2025-03-16 20:49:50,699 - transcript_diagnostic - INFO - Testing transcript retrieval for video dQw4w9WgXcQ
+2025-03-16 20:49:50,700 - services.transcription_service - INFO - Attempting to retrieve transcript for video ID: dQw4w9WgXcQ
+2025-03-16 20:49:51,647 - services.transcription_service - INFO - Found auto-generated transcript in en
+2025-03-16 20:49:51,695 - services.transcription_service - INFO - Successfully retrieved transcript for video dQw4w9WgXcQ (standard method)
+2025-03-16 20:49:52,155 - services.transcription_service - INFO - Available transcripts for dQw4w9WgXcQ: ['en']
+2025-03-16 20:49:52,155 - services.transcription_service - INFO - Found transcript in en
+2025-03-16 20:49:57,635 - services.transcription_service - INFO - Successfully extracted subtitles using yt-dlp: dQw4w9WgXcQ.en.vtt
+2025-03-16 20:49:57,640 - services.transcription_service - INFO - Attempting to retrieve transcript for video ID: dQw4w9WgXcQ
+2025-03-16 20:49:57,641 - services.transcription_service - INFO - Found cached transcript for dQw4w9WgXcQ
+2025-03-16 20:49:57,641 - services.transcription_service - INFO - Transcript retrieval successful using cache method. Current success rate: 100.0%
+2025-03-16 20:49:57,641 - transcript_diagnostic - INFO - Testing content analysis...
+2025-03-16 20:49:57,643 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-16 20:49:58,024 - transcript_diagnostic - INFO - Testing content analysis for video dQw4w9WgXcQ
+2025-03-16 20:49:58,025 - services.analysis_service - INFO - Sending content to Claude for analysis, content length: 1848
+2025-03-16 20:49:58,026 - transcript_diagnostic - INFO - Testing database integration...
+2025-03-16 20:49:58,041 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-16 20:49:58,453 - transcript_diagnostic - INFO - Creating video dQw4w9WgXcQ in database
+2025-03-16 20:49:58,512 - services.transcription_service - INFO - Attempting to retrieve transcript for video ID: dQw4w9WgXcQ
+2025-03-16 20:49:58,533 - services.transcription_service - INFO - Found cached transcript for dQw4w9WgXcQ
+2025-03-16 20:49:58,533 - services.transcription_service - INFO - Transcript retrieval successful using cache method. Current success rate: 100.0%
+2025-03-16 20:49:58,534 - services.analysis_service - INFO - Sending content to Claude for analysis, content length: 1848
+2025-03-16 20:49:58,534 - transcript_diagnostic - INFO - Creating summary for video dQw4w9WgXcQ

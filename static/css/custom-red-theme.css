@@ -1,0 +1,155 @@
+/* Add or update these styles in your custom-red-theme.css file */
+
+:root {
+    /* Primary brand colors */
+    --primary-color: #e53e3e; /* Vibrant red */
+    --primary-dark: #c53030;  /* Darker red for hover states */
+    --primary-light: #fc8181; /* Lighter red for accents */
+    
+    /* Background colors */
+    --bg-primary: #1a1a2e;   /* Deep blue-purple for main background */
+    --bg-secondary: #2d2d42; /* Slightly lighter background for cards/sections */
+    --bg-tertiary: #373756;  /* Even lighter for hover states */
+    
+    /* Text colors */
+    --text-primary: #ffffff;   /* White text for dark backgrounds */
+    --text-secondary: #e2e8f0; /* Slightly muted white for secondary text */
+    --text-muted: #a0aec0;     /* Muted text for less important elements */
+    
+    /* Accent colors */
+    --accent-purple: #805ad5; /* Purple accent for variety */
+    --accent-pink: #ed64a6;   /* Pink accent for call to action or emphasis */
+    
+    /* Border and shadow */
+    --border-color: #4a5568;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Logo styling */
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo-text {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    background: linear-gradient(to right, var(--primary-color), var(--accent-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Hero section styling */
+  .hero-section {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, var(--primary-color), var(--accent-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Button styling */
+  .btn-primary {
+    background: linear-gradient(to right, var(--primary-color), var(--primary-dark));
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(229, 62, 62, 0.3);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  
+  /* Footer styling */
+  .main-footer {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 3rem 0;
+    margin-top: 4rem;
+  }
+  
+  .footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .footer-logo .logo-text {
+    font-size: 1.8rem;
+  }
+  
+  .footer-tagline {
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+  
+  /* Network visualization specific styling */
+  .network-visualization circle {
+    stroke: var(--bg-primary);
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+  }
+  
+  .network-visualization circle:hover {
+    stroke: var(--primary-color);
+    stroke-width: 3px;
+  }
+  
+  .network-tooltip {
+    position: absolute;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+    max-width: 300px;
+  }
+  
+  .tooltip-title {
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+  }
+  
+  .tooltip-channel {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }

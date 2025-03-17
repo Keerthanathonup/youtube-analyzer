@@ -1,44 +1,303 @@
 {% extends "base.html" %}
 
-{% block title %}Home - YouTube Video Content Analyzer{% endblock %}
+{% block title %}YouTube Content Analyzer{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <h1>Don't watch, just understand.</h1>
-    <p>Get summaries, key points, and insights from any YouTube video in seconds.</p>
-    
-    <div class="search-container">
-        <form id="video-form" action="/analyze" method="post">
-            <input type="text" name="video_url" id="video_url" placeholder="Paste a YouTube video URL" required>
-            <button type="submit">Analyze</button>
-        </form>
-    </div>
-</section>
-
-<section class="recent-videos">
-    <h2>Recently Analyzed Videos</h2>
-    <div class="video-grid" id="recent-videos-container">
-        {% for video in recent_videos %}
-        <div class="video-card">
-            <div class="thumbnail">
-                <a href="/video/{{ video.id }}">
-                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title }}">
-                    <span class="duration">{{ format_duration(video.duration_seconds) }}</span>
-                </a>
-            </div>
-            <div class="video-info">
-                <h3><a href="/video/{{ video.id }}">{{ video.title }}</a></h3>
-                <p class="channel">{{ video.channel_title }}</p>
-                <p class="date">{{ video.published_at.strftime('%b %d, %Y') }}</p>
+<div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <h1>Discover Insights in <span class="gradient-text">Video Content</span></h1>
+                    <p class="lead mb-4">Analyze any YouTube video with AI to get summaries, key points, topics, and sentiment analysis in seconds.</p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="/search" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i> Analyze a Video
+                        </a>
+                        <a href="/network" class="btn btn-outline">
+                            <i class="fas fa-project-diagram me-2"></i> Explore Content Network
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <div class="hero-image">
+                        <img src="/static/img/analysis.svg" alt="Content Analysis" class="img-fluid" onerror="this.src='/static/img/placeholder.png'; this.onerror=null;">
+                    </div>
+                </div>
             </div>
         </div>
+    </section>
+
+    <!-- Recent Analyses Section -->
+    <section class="mt-5">
+        <div class="section-header">
+            <h2 class="mb-4">Recent Analyses</h2>
+        </div>
+        
+        {% if recent_videos %}
+        <div class="video-grid">
+            {% for video in recent_videos %}
+            <div class="video-card">
+                <div class="thumbnail">
+                    <img src="{{ video.thumbnail_url or '/static/img/placeholder.png' }}" alt="{{ video.title }}">
+                    <div class="thumbnail-overlay">
+                        <div class="thumbnail-actions">
+                            <a href="/video/{{ video.id }}" class="thumbnail-btn">
+                                <i class="fas fa-chart-bar"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <h3><a href="/video/{{ video.id }}">{{ video.title|truncate(50) }}</a></h3>
+                    <p class="channel">{{ video.channel_title }}</p>
+                    <div class="video-actions">
+                        <a href="/video/{{ video.id }}" class="btn btn-sm btn-primary">View Analysis</a>
+                        <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" class="btn btn-sm btn-outline">
+                            <i class="fab fa-youtube"></i> Watch
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
         {% else %}
-        <p class="no-videos">No videos have been analyzed yet.</p>
-        {% endfor %}
-    </div>
-</section>
+        <div class="empty-state card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state-icon mb-4">
+                    <i class="fas fa-video fa-3x text-muted"></i>
+                </div>
+                <h3 class="text-muted mb-3">No analyzed videos yet</h3>
+                <p class="mb-4">Get started by searching for a YouTube video to analyze.</p>
+                <a href="/search" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i> Search Videos
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">How It Works</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-4 mb-md-0">
+                        <div class="feature text-center">
+                            <div class="feature-icon mb-3">
+                                <div class="icon-circle">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                            <h3 class="h5">1. Search</h3>
+                            <p>Find any YouTube video you want to analyze with our simple search.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4 mb-md-0">
+                        <div class="feature text-center">
+                            <div class="feature-icon mb-3">
+                                <div class="icon-circle">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                            </div>
+                            <h3 class="h5">2. Analyze</h3>
+                            <p>Our AI extracts the transcript and analyzes the video content.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature text-center">
+                            <div class="feature-icon mb-3">
+                                <div class="icon-circle">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                            </div>
+                            <h3 class="h5">3. Insights</h3>
+                            <p>Get summaries, key points, topics, sentiment and more.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="mt-5">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title mb-3">
+                            <i class="fas fa-chart-pie me-2 text-accent"></i> Content Analysis
+                        </h3>
+                        <p>Our AI-powered analysis extracts key insights from any YouTube video, breaking down complex content into summaries, key points, and topics.</p>
+                        <ul class="feature-list">
+                            <li>Concise summaries of video content</li>
+                            <li>Key points with timestamps</li>
+                            <li>Main topics and themes</li>
+                            <li>Sentiment and tone analysis</li>
+                        </ul>
+                        <a href="/search" class="btn btn-outline mt-3">Start Analyzing</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title mb-3">
+                            <i class="fas fa-project-diagram me-2 text-accent"></i> Content Network
+                        </h3>
+                        <p>Explore connections between related videos with our interactive network visualization. Discover content relationships and uncover valuable insights.</p>
+                        <ul class="feature-list">
+                            <li>Interactive network visualization</li>
+                            <li>Content relationship mapping</li>
+                            <li>Discover related videos</li>
+                            <li>Explore content connections</li>
+                        </ul>
+                        <a href="/network" class="btn btn-outline mt-3">Explore Network</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', path='/js/index.js') }}"></script>
+{% block extra_css %}
+<style>
+    /* Custom styles for the index page */
+    .hero {
+        position: relative;
+        padding: 4rem 0;
+        border-radius: 12px;
+    }
+    
+    .gradient-text {
+        background: var(--gradient-primary);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+    }
+    
+    .feature-icon .icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(232, 62, 140, 0.1) 0%, rgba(156, 85, 246, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        border: 1px solid rgba(156, 85, 246, 0.2);
+    }
+    
+    .feature-icon i {
+        font-size: 2rem;
+        background: var(--gradient-primary);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 1rem;
+    }
+    
+    .feature-list li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feature-list li:before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--accent-primary);
+        font-weight: bold;
+    }
+    
+    .thumbnail-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 10, 25, 0.4);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .video-card:hover .thumbnail-overlay {
+        opacity: 1;
+    }
+    
+    .thumbnail-actions {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .thumbnail-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--gradient-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: translateY(20px);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .video-card:hover .thumbnail-btn {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .section-header {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .section-header h2 {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .section-header h2:after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: var(--gradient-primary);
+        border-radius: 3px;
+    }
+    
+    .text-accent {
+        color: var(--accent-primary);
+    }
+    
+    .empty-state {
+        background-color: var(--bg-secondary);
+        border: 1px dashed var(--border-color);
+    }
+    
+    .empty-state-icon {
+        color: var(--text-muted);
+    }
+</style>
 {% endblock %}
