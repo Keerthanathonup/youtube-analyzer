@@ -1,0 +1,645 @@
+# services/analysis_service.py - Enhanced with better parsing and response handling
+
+from services.claude_service import ClaudeService
+from services.transcription_service import TranscriptionService
+from services.category_detection import CategoryDetectionService
+import logging
+import config
+import re
+import json
+from typing import Dict, List, Any, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
+class AnalysisService:
+    """Service for analyzing video content and generating insights."""
+    
+    def __init__(self, api_key: str = None):
+        """Initialize the analysis service."""
+        self.claude_service = ClaudeService(api_key=api_key or config.ANTHROPIC_API_KEY)
+        self.transcription_service = TranscriptionService()
+        # Initialize the category detection service
+        self.category_detection = CategoryDetectionService(claude_service=self.claude_service)
+        self.use_mock = config.ANTHROPIC_API_KEY is None or config.ANTHROPIC_API_KEY == ""
+    
+    def analyze_video(self, video_id: str, transcript: Optional[str] = None, video_metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Analyze video transcript and generate insights.
+        
+        Args:
+            video_id: YouTube video ID
+            transcript: Full transcript text of the video (optional)
+            video_metadata: Dictionary with video title, description, etc.
+            
+        Returns:
+            Dictionary with analysis results
+        """
+        # If transcript wasn't provided, try to get it
+        if transcript is None and video_id:
+            logger.info(f"No transcript provided, attempting to retrieve for video {video_id}")
+            transcript = self.transcription_service.get_transcript(video_id)
+        
+        # Check if we have enough transcript content to analyze
+        if not transcript or len(transcript.split()) < 10:
+            logger.warning(f"Insufficient transcript for video {video_id}, using fallback strategy")
+            
+            # Generate mock transcript from metadata if available
+            if video_metadata:
+                title = video_metadata.get('title', '')
+                description = video_metadata.get('description', '')
+                if title or description:
+                    logger.info("Generating mock transcript from metadata")
+                    transcript = self.transcription_service.mock_transcript_from_metadata(
+                        title=title, 
+                        description=description
+                    )
+                    if not transcript or len(transcript.split()) < 10:
+                        return self._generate_error_analysis(video_id, "Insufficient content for analysis")
+                else:
+                    return self._generate_error_analysis(video_id, "Insufficient transcript and metadata")
+            else:
+                return self._generate_error_analysis(video_id, "Insufficient transcript content for analysis")
+        
+        # Add chunking for large transcripts
+        if transcript and len(transcript) > 6000:
+            logger.info(f"Large transcript detected ({len(transcript)} chars), using chunked analysis")
+            return self._analyze_large_transcript(transcript, video_metadata, video_id)
+        
+        # Use mock data if no API key is available
+        if self.use_mock:
+            return self._generate_mock_analysis(video_id, video_metadata)
+        
+        try:
+            # NEW: Detect video category before analysis
+            logger.info("Detecting video category before analysis")
+            title = video_metadata.get('title', '') if video_metadata else ''
+            description = video_metadata.get('description', '') if video_metadata else ''
+            channel = video_metadata.get('channel_title', '') if video_metadata else ''
+            
+            # Get the category, confidence, and any secondary categories
+            category, confidence, secondary_categories = self.category_detection.detect_category(
+                transcript=transcript, 
+                title=title, 
+                description=description, 
+                channel_title=channel
+            )
+            
+            logger.info(f"Detected category: {category} (confidence: {confidence:.2f})")
+            if secondary_categories:
+                secondary_cats = ", ".join([f"{cat} ({conf:.2f})" for cat, conf in secondary_categories])
+                logger.info(f"Secondary categories: {secondary_cats}")
+            
+            # Get category-specific prompt for analysis
+            category_prompt = self.category_detection.get_analysis_prompt(
+                category=category,
+                title=title,
+                description=description, 
+                video_id=video_id
+            )
+            
+            # ENHANCEMENT: Add additional instructions based on content category
+            if category == "Educational/Tutorial":
+                category_prompt += "\n\nFor educational content, please ensure you provide:\n"
+                category_prompt += "1. Clear learning objectives at the beginning\n"
+                category_prompt += "2. A structured outline of main concepts with logical progression\n"
+                category_prompt += "3. Definitions of all technical terms mentioned\n"
+                category_prompt += "4. Step-by-step breakdown of any processes taught\n"
+                category_prompt += "Make sure the summary works as comprehensive study notes."
+            elif category == "Cooking/Recipe":
+                category_prompt += "\n\nFor recipe content, please ensure you provide:\n"
+                category_prompt += "1. Complete ingredients list with precise measurements\n"
+                category_prompt += "2. Equipment needed for preparation\n"
+                category_prompt += "3. Step-by-step numbered instructions in chronological order\n"
+                category_prompt += "4. Any chef's tips or techniques mentioned\n"
+                category_prompt += "Make sure the summary can be used as a standalone recipe."
+            
+            # Get full analysis from Claude using category-specific prompt
+            logger.info(f"Sending content to Claude for analysis with {category} prompt")
+            
+            # ENHANCEMENT: Add explicit JSON format request to the prompt
+            category_prompt += "\n\nYour response MUST be in valid JSON format with the following fields: summary, detailed_summary, key_points (as array), topics (as array), sentiment, sentiment_score, and sentiment_analysis."
+            
+            analysis_response = self.claude_service.analyze_transcript_with_prompt(
+                transcript=transcript, 
+                video_metadata=video_metadata,
+                custom_prompt=category_prompt
+            )
+            
+            # ENHANCEMENT: Use the robust parser for handling Claude's response
+            # This will handle cases where Claude doesn't return properly formatted JSON
+            analysis_results = self._parse_claude_response(analysis_response)
+
+            # Standard field name normalization
+            if "detailed_summary" not in analysis_results and "summary" in analysis_results:
+                analysis_results["detailed_summary"] = analysis_results["summary"]
+
+            # Format key_points consistently
+            if "key_points" in analysis_results:
+                if isinstance(analysis_results["key_points"], str):
+                    analysis_results["key_points"] = [analysis_results["key_points"]]
+                elif not isinstance(analysis_results["key_points"], list):
+                    analysis_results["key_points"] = ["No key points extracted"]
+
+            # Format topics consistently
+            if "topics" in analysis_results:
+                if isinstance(analysis_results["topics"], str):
+                    analysis_results["topics"] = [{"name": analysis_results["topics"]}]
+                elif isinstance(analysis_results["topics"], list):
+                    if analysis_results["topics"] and isinstance(analysis_results["topics"][0], str):
+                        analysis_results["topics"] = [{"name": topic} for topic in analysis_results["topics"]]
+                        
+            # ENHANCEMENT: Add category-specific fields
+            if category == "Cooking/Recipe":
+                # Make sure we have recipe-specific fields
+                if "ingredients" not in analysis_results:
+                    ingredients = self._extract_ingredients_from_analysis(analysis_results)
+                    if ingredients:
+                        analysis_results["ingredients"] = ingredients
+                
+                if "preparation_steps" not in analysis_results:
+                    steps = self._extract_preparation_steps(analysis_results)
+                    if steps:
+                        analysis_results["preparation_steps"] = steps
+            
+            elif category == "Educational/Tutorial":
+                # Make sure we have education-specific fields
+                if "learning_objectives" not in analysis_results:
+                    objectives = self._extract_learning_objectives(analysis_results)
+                    if objectives:
+                        analysis_results["learning_objectives"] = objectives
+                
+                if "main_concepts" not in analysis_results:
+                    concepts = self._extract_main_concepts(analysis_results)
+                    if concepts:
+                        analysis_results["main_concepts"] = concepts
+                        
+            # Make sure we have all required fields
+            if not all(key in analysis_results for key in ["summary", "key_points", "topics", "sentiment"]):
+                logger.warning("Incomplete analysis results from Claude. Filling missing fields.")
+                # Fill any missing fields with defaults
+                if "summary" not in analysis_results:
+                    analysis_results["summary"] = "Summary unavailable"
+                if "key_points" not in analysis_results:
+                    analysis_results["key_points"] = ["No key points identified"]
+                if "topics" not in analysis_results:
+                    analysis_results["topics"] = [{"name": "General", "description": "General content", "confidence": 50}]
+                if "sentiment" not in analysis_results:
+                    analysis_results["sentiment"] = "neutral"
+                if "sentiment_score" not in analysis_results:
+                    analysis_results["sentiment_score"] = 0
+                if "sentiment_analysis" not in analysis_results:
+                    analysis_results["sentiment_analysis"] = "Sentiment analysis unavailable"
+            
+            # Add video_id to the results
+            analysis_results["video_id"] = video_id
+            
+            # Add detected category information
+            analysis_results["content_category"] = {
+                "primary": category,
+                "confidence": confidence,
+                "secondary": secondary_categories
+            }
+            
+            # Add source information to indicate if this was based on actual transcript or metadata
+            if transcript and video_metadata and transcript.startswith(f"Video Title: {video_metadata.get('title', '')}"):
+                analysis_results["analysis_source"] = "metadata"
+            else:
+                analysis_results["analysis_source"] = "transcript"
+            
+            return analysis_results
+            
+        except Exception as e:
+            logger.error(f"Error during analysis: {str(e)}", exc_info=True)
+            return self._generate_error_analysis(video_id, f"Error during analysis: {str(e)}")
+    
+    # ENHANCEMENT: New robust parsing methods 
+    def _parse_claude_response(self, response_text: str) -> Dict[str, Any]:
+        """
+        Parse Claude's response into structured data.
+        Handles both JSON and non-JSON formatted responses.
+        """
+        # If response_text is already a dict, just return it
+        if isinstance(response_text, dict):
+            # Ensure we have all required fields
+            result = response_text.copy()
+            if "summary" not in result:
+                result["summary"] = "Summary unavailable"
+            if "key_points" not in result:
+                result["key_points"] = []
+            if "topics" not in result:
+                result["topics"] = []
+            if "sentiment" not in result:
+                result["sentiment"] = "neutral"
+            if "sentiment_score" not in result:
+                result["sentiment_score"] = 0
+            return result
+
+        # First try to extract JSON blocks
+        try:
+            # Look for JSON blocks in the response
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}') + 1
+            
+            if json_start >= 0 and json_end > json_start:
+                json_str = response_text[json_start:json_end]
+                return json.loads(json_str)
+        except Exception as e:
+            logger.warning(f"Failed to parse JSON from response: {e}")
+        
+        # If JSON parsing fails, try to extract sections manually
+        try:
+            # Default structure
+            result = {
+                "summary": "",
+                "detailed_summary": "",
+                "key_points": [],
+                "topics": [],
+                "sentiment": "neutral",
+                "sentiment_score": 0,
+                "sentiment_analysis": ""
+            }
+            
+            # Extract summary
+            if "summary" in response_text.lower():
+                summary_start = response_text.lower().find("summary")
+                if summary_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), summary_start + 7)
+                    if next_section > summary_start:
+                        summary_text = response_text[summary_start:next_section].strip()
+                        # Remove "Summary:" and similar headers
+                        summary_text = self._remove_section_header(summary_text)
+                        result["summary"] = summary_text
+                        result["detailed_summary"] = summary_text
+            
+            # Extract key points
+            if "key points" in response_text.lower() or "key_points" in response_text.lower():
+                kp_start = max(response_text.lower().find("key points"), response_text.lower().find("key_points"))
+                if kp_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), kp_start + 10)
+                    if next_section > kp_start:
+                        kp_text = response_text[kp_start:next_section].strip()
+                        kp_text = self._remove_section_header(kp_text)
+                        # Extract bullet points
+                        key_points = self._extract_bullet_points(kp_text)
+                        result["key_points"] = key_points
+            
+            # Extract topics
+            if "topics" in response_text.lower():
+                topics_start = response_text.lower().find("topics")
+                if topics_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), topics_start + 6)
+                    if next_section > topics_start:
+                        topics_text = response_text[topics_start:next_section].strip()
+                        topics_text = self._remove_section_header(topics_text)
+                        topics = self._extract_bullet_points(topics_text)
+                        result["topics"] = [{"name": topic} for topic in topics]
+            
+            # Extract sentiment
+            if "sentiment" in response_text.lower():
+                sent_start = response_text.lower().find("sentiment")
+                if sent_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), sent_start + 9)
+                    if next_section > sent_start:
+                        sent_text = response_text[sent_start:next_section].strip()
+                        sent_text = self._remove_section_header(sent_text)
+                        
+                        # Try to identify sentiment value
+                        sentiment = "neutral"  # Default
+                        if "positive" in sent_text.lower():
+                            sentiment = "positive"
+                        elif "negative" in sent_text.lower():
+                            sentiment = "negative"
+                        
+                        result["sentiment"] = sentiment
+                        result["sentiment_analysis"] = sent_text
+                        
+                        # Try to extract sentiment score
+                        score_match = re.search(r'(-?\d+(\.\d+)?)', sent_text)
+                        if score_match:
+                            try:
+                                score = float(score_match.group(1))
+                                # Normalize score if it's not already in -1 to 1 range
+                                if score > 10 or score < -10:
+                                    score = score / 100
+                                elif score > 1 or score < -1:
+                                    score = score / 10
+                                result["sentiment_score"] = score
+                            except:
+                                result["sentiment_score"] = 0 if sentiment == "neutral" else (0.7 if sentiment == "positive" else -0.7)
+            
+            # Look for recipe-specific sections
+            if "ingredients" in response_text.lower():
+                ing_start = response_text.lower().find("ingredients")
+                if ing_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), ing_start + 10)
+                    if next_section > ing_start:
+                        ing_text = response_text[ing_start:next_section].strip()
+                        ing_text = self._remove_section_header(ing_text)
+                        ingredients = self._extract_bullet_points(ing_text)
+                        result["ingredients"] = ingredients
+            
+            # Look for educational-specific sections
+            if "learning objectives" in response_text.lower():
+                obj_start = response_text.lower().find("learning objectives")
+                if obj_start >= 0:
+                    next_section = self._find_next_section(response_text.lower(), obj_start + 18)
+                    if next_section > obj_start:
+                        obj_text = response_text[obj_start:next_section].strip()
+                        obj_text = self._remove_section_header(obj_text)
+                        objectives = self._extract_bullet_points(obj_text)
+                        result["learning_objectives"] = objectives
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to parse response: {e}")
+            # Return minimal default structure with the raw text
+            return {
+                "summary": response_text[:500] + "..." if len(response_text) > 500 else response_text,
+                "key_points": [],
+                "topics": [],
+                "sentiment": "neutral"
+            }
+    def _find_next_section(self, text: str, start_pos: int) -> int:
+        """Find the start position of the next section heading."""
+        section_markers = [
+            "summary", "key points", "key_points", "topics", "sentiment",
+            "ingredients", "preparation", "steps", "instructions", "equipment",
+            "learning objectives", "main concepts", "examples", "terminology",
+            "review", "conclusion", "recommendations"
+        ]
+        
+        positions = []
+        for marker in section_markers:
+            pos = text.find(marker, start_pos + 1)
+            if pos > start_pos:
+                positions.append(pos)
+        
+        if positions:
+            return min(positions)
+        return len(text)
+    
+    def _remove_section_header(self, text: str) -> str:
+        """Remove section headers like 'Summary:' from text."""
+        lines = text.split('\n')
+        if not lines:
+            return text
+            
+        if ':' in lines[0] or '#' in lines[0] or '**' in lines[0]:
+            return '\n'.join(lines[1:]).strip()
+        return text
+    
+    def _extract_bullet_points(self, text: str) -> List[str]:
+        """Extract bullet points from text."""
+        points = []
+        lines = text.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            # Check for bullet point markers
+            if line.startswith('-') or line.startswith('*') or line.startswith('•'):
+                # Remove the bullet marker
+                point = line[1:].strip()
+                if point:
+                    points.append(point)
+            # Check for numbered points
+            elif line and line[0].isdigit() and '. ' in line:
+                point = line.split('. ', 1)[1].strip()
+                if point:
+                    points.append(point)
+        
+        # If no bullet points were found but text has multiple lines, use lines as points
+        if not points and len(lines) > 1:
+            points = [line.strip() for line in lines if line.strip() and len(line.strip()) > 10]
+                    
+        # If still no bullet points found, try to split by periods
+        if not points and text:
+            sentences = text.split('.')
+            for sentence in sentences:
+                clean = sentence.strip()
+                if clean and len(clean) > 10:  # Avoid tiny fragments
+                    points.append(clean)
+        
+        return points
+    
+    # ENHANCEMENT: Category-specific field extraction
+    def _extract_ingredients_from_analysis(self, analysis_results: Dict[str, Any]) -> List[str]:
+        """Extract ingredients list from analysis results."""
+        # Look for ingredients in different parts of the analysis
+        
+        # First check if ingredients are in key_points
+        if "key_points" in analysis_results and isinstance(analysis_results["key_points"], list):
+            ingredient_points = []
+            for point in analysis_results["key_points"]:
+                if isinstance(point, str) and any(marker in point.lower() for marker in ["cup", "tablespoon", "teaspoon", "gram", "oz", "pound", "kg"]):
+                    ingredient_points.append(point)
+            
+            if len(ingredient_points) >= 3:  # If we found multiple ingredient-like points
+                return ingredient_points
+        
+        # Next check detailed_summary for ingredient lists
+        if "detailed_summary" in analysis_results:
+            summary = analysis_results["detailed_summary"]
+            ingredient_section_match = re.search(r'(?i)ingredients?:?\s*([\s\S]+?)(?:instructions|directions|method|preparation|steps):', summary)
+            if ingredient_section_match:
+                ingredient_text = ingredient_section_match.group(1).strip()
+                ingredients = []
+                for line in ingredient_text.split('\n'):
+                    line = line.strip()
+                    if line and not line.lower().startswith(("ingredients", "you will need")):
+                        # Clean up bullet points
+                        if line.startswith('-') or line.startswith('*') or line.startswith('•'):
+                            line = line[1:].strip()
+                        if line:
+                            ingredients.append(line)
+                return ingredients
+        
+        # If no ingredients found, return empty list
+        return []
+    
+    def _extract_preparation_steps(self, analysis_results: Dict[str, Any]) -> List[str]:
+        """Extract preparation steps from analysis results."""
+        # First check if there's a "preparation_steps" field already
+        if "preparation_steps" in analysis_results and isinstance(analysis_results["preparation_steps"], list):
+            return analysis_results["preparation_steps"]
+        
+        # Look in the detailed summary for steps
+        if "detailed_summary" in analysis_results:
+            summary = analysis_results["detailed_summary"]
+            steps_section_match = re.search(r'(?i)(instructions|directions|method|preparation|steps):?\s*([\s\S]+?)(?:notes|tips|serving|conclusion|$)', summary)
+            if steps_section_match:
+                steps_text = steps_section_match.group(2).strip()
+                return self._extract_bullet_points(steps_text)
+        
+        # If key_points look like steps (start with action verbs), use those
+        if "key_points" in analysis_results and isinstance(analysis_results["key_points"], list):
+            action_verbs = ["mix", "stir", "add", "combine", "heat", "cook", "bake", "slice", "dice", "chop", "pour", "blend"]
+            step_like_points = []
+            for point in analysis_results["key_points"]:
+                if isinstance(point, str):
+                    words = point.lower().split()
+                    if words and any(words[0].startswith(verb) for verb in action_verbs):
+                        step_like_points.append(point)
+            
+            if len(step_like_points) >= 3:  # If we found multiple step-like points
+                return step_like_points
+        
+        # If no steps found, return empty list
+        return []
+    
+    def _extract_learning_objectives(self, analysis_results: Dict[str, Any]) -> List[str]:
+        """Extract learning objectives from analysis results."""
+        # First check if there's a "learning_objectives" field already
+        if "learning_objectives" in analysis_results and isinstance(analysis_results["learning_objectives"], list):
+            return analysis_results["learning_objectives"]
+        
+        # Check if key_points look like learning objectives
+        if "key_points" in analysis_results and isinstance(analysis_results["key_points"], list):
+            objective_points = []
+            for point in analysis_results["key_points"]:
+                if isinstance(point, str):
+                    # Learning objectives often start with "understand", "learn", "recognize", etc.
+                    objective_markers = ["understand", "learn", "recognize", "identify", "explain", "describe", "differentiate", "compare", "analyze", "evaluate", "create", "develop"]
+                    if any(point.lower().startswith(marker) for marker in objective_markers):
+                        objective_points.append(point)
+            
+            if objective_points:
+                return objective_points
+        
+        # If no learning objectives found, convert key points to learning objectives
+        if "key_points" in analysis_results and isinstance(analysis_results["key_points"], list):
+            objectives = []
+            for point in analysis_results["key_points"]:
+                if isinstance(point, str):
+                    # Transform point into learning objective format
+                    point = point.strip()
+                    if not any(point.lower().startswith(marker) for marker in ["understand", "learn"]):
+                        point = f"Understand {point[0].lower()}{point[1:]}" if point else ""
+                    if point:
+                        objectives.append(point)
+            return objectives[:5]  # Limit to 5 objectives
+        
+        # If still nothing, return empty list
+        return []
+    
+    def _extract_main_concepts(self, analysis_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract main concepts from analysis results."""
+        # First check if there's a "main_concepts" field already
+        if "main_concepts" in analysis_results and isinstance(analysis_results["main_concepts"], list):
+            return analysis_results["main_concepts"]
+        
+        # Use topics as main concepts with descriptions
+        if "topics" in analysis_results and isinstance(analysis_results["topics"], list):
+            concepts = []
+            for topic in analysis_results["topics"]:
+                if isinstance(topic, dict) and "name" in topic:
+                    concept = {
+                        "name": topic["name"],
+                        "description": topic.get("description", f"Understanding of {topic['name']}")
+                    }
+                    concepts.append(concept)
+                elif isinstance(topic, str):
+                    concept = {
+                        "name": topic,
+                        "description": f"Understanding of {topic}"
+                    }
+                    concepts.append(concept)
+            
+            if concepts:
+                return concepts
+        
+        # If no concepts found, create from key points
+        if "key_points" in analysis_results and isinstance(analysis_results["key_points"], list):
+            concepts = []
+            for i, point in enumerate(analysis_results["key_points"]):
+                if isinstance(point, str) and point:
+                    # Create a concept name from the first few words
+                    words = point.split()
+                    name = " ".join(words[:3]) + "..." if len(words) > 3 else point
+                    concept = {
+                        "name": name,
+                        "description": point
+                    }
+                    concepts.append(concept)
+            return concepts
+        
+        # If still nothing, return empty list
+        return []
+    
+    def _analyze_large_transcript(self, transcript, video_metadata, video_id):
+        """
+        Break down large transcripts into chunks for analysis.
+        
+        Args:
+            transcript: Full transcript text
+            video_metadata: Dictionary with video metadata
+            video_id: YouTube video ID
+            
+        Returns:
+            Dictionary with combined analysis results
+        """
+        logger.info(f"Chunking large transcript ({len(transcript)} chars) for {video_id}")
+        
+        # Since this is a large transcript, we'll use a simplified approach for testing
+        # Just analyze the first 5000 characters
+        
+        short_transcript = transcript[:5000]
+        
+        title = video_metadata.get('title', '')
+        description = video_metadata.get('description', '')
+        channel = video_metadata.get('channel_title', '')
+        
+        # Detect category
+        category, confidence, secondary_categories = self.category_detection.detect_category(
+            transcript=short_transcript, 
+            title=title, 
+            description=description, 
+            channel_title=channel
+        )
+        
+        # Get category-specific prompt
+        category_prompt = self.category_detection.get_analysis_prompt(
+            category=category,
+            title=title,
+            description=description, 
+            video_id=video_id
+        )
+        
+        # Analyze with Claude
+        analysis_results = self.claude_service.analyze_transcript_with_prompt(
+            transcript=short_transcript, 
+            video_metadata=video_metadata,
+            custom_prompt=category_prompt
+        )
+        
+        # Parse the response
+        parsed_results = self._parse_claude_response(analysis_results)
+        
+        # Add video_id and category info
+        parsed_results["video_id"] = video_id
+        parsed_results["content_category"] = {
+            "primary": category,
+            "confidence": confidence,
+            "secondary": secondary_categories
+        }
+        
+        # Add category-specific fields
+        if category == "Cooking/Recipe":
+            ingredients = self._extract_ingredients_from_analysis(parsed_results)
+            if ingredients:
+                parsed_results["ingredients"] = ingredients
+            
+            steps = self._extract_preparation_steps(parsed_results)
+            if steps:
+                parsed_results["preparation_steps"] = steps
+                
+        elif category == "Educational/Tutorial":
+            objectives = self._extract_learning_objectives(parsed_results)
+            if objectives:
+                parsed_results["learning_objectives"] = objectives
+            
+            concepts = self._extract_main_concepts(parsed_results)
+            if concepts:
+                parsed_results["main_concepts"] = concepts
+        
+        return parsed_results

@@ -1,0 +1,37 @@
+{
+  "summary": "The video discusses how the brain performs under stress, and the speaker shares his personal experience of breaking into his own home after forgetting his keys. The speaker then introduces the concept of ",
+  "key_points": [
+    "Designate a specific place in the home for easily lost items like keys and passports",
+    "Rehearse mentally challenging scenarios and think through potential issues and solutions",
+    "Practice stress-reducing techniques like deep breathing to maintain clear thinking under pressure",
+    "Maintain a backup of important documents and information in case of emergencies",
+    "Build in redundancies and backup plans to avoid cascading problems",
+    "Seek input from others to gain new perspectives and identify potential blind spots"
+  ],
+  "topics": [
+    {
+      "name": "Extracted Topic",
+      "description": "Manually extracted from response",
+      "confidence": 50
+    }
+  ],
+  "sentiment": "neutral",
+  "sentiment_score": 0.5,
+  "sentiment_analysis": "Analysis constructed from raw response",
+  "raw_response": "{\n  \"summary\": \"The video discusses how the brain performs under stress, and the speaker shares his personal experience of breaking into his own home after forgetting his keys. The speaker then introduces the concept of \"prospective hindsight\" or \"pre-mortem,\" which involves identifying potential issues or problems before they occur, and taking steps to prevent or minimize them. The analysis focuses on providing practical strategies for managing stress, improving organization, and making better decisions in challenging situations.\",\n  \"key_points\": [\n    \"Designate a specific place in the home for easily lost items like keys and passports\",\n    \"Rehearse mentally challenging scenarios and think through potential issues and solutions\",\n    \"Practice stress-reducing techniques like deep breathing to maintain clear thinking under pressure\",\n    \"Maintain a backup of important documents and information in case of emergencies\",\n    \"Build in redundancies and backup plans to avoid cascading problems\",\n    \"Seek input from others to gain new perspectives and identify potential blind spots\"\n  ],\n  \"topics\": [\n    \"Stress management and cognitive performance\",\n    \"Proactive planning and problem solving\",\n    \"Organizational strategies for reducing loss and mistakes\",\n    \"Leveraging psychology and neuroscience insights for practical application\",\n    \"Building resilience and adaptability in challenging situations\"\n  ],\n  \"sentiment\": \"positive\",\n  \"sentiment_score\": 0.7,\n  \"sentiment_analysis\": \"The overall tone of the video is positive and constructive, focusing on practical strategies and techniques that can help people manage stress and make better decisions, even in difficult or unexpected situations. The presenter shares his own relatable experiences and introduces evidence-based psychological principles in an engaging and accessible way, encouraging the audience to adopt a proactive and resilient mindset.\"\n}",
+  "video_id": "8jPQjjsBbIc",
+  "content_category": {
+    "primary": "Health & Fitness",
+    "confidence": 0.75,
+    "secondary": [
+      [
+        "Educational/Tutorial",
+        0.4
+      ],
+      [
+        "Business/Finance",
+        0.35
+      ]
+    ]
+  }
+}

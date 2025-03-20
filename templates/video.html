@@ -109,7 +109,9 @@
                                 <div class="tab-section-header mt-4">
                                     <h5>Detailed Summary</h5>
                                 </div>
-                                <p>{{ summary.detailed_summary }}</p>
+                                <div class="detailed-summary">
+                                    {{ summary.detailed_summary|safe }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
