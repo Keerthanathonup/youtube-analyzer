@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - YInsights{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 mb-0">Terms of Service</h1>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Last updated: [Current Date]</p>
+                    
+                    <h2 class="h4 mt-4">1. Acceptance of Terms</h2>
+                    <p>By accessing or using YInsights ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
+                    
+                    <h2 class="h4 mt-4">2. YouTube API Services</h2>
+                    <p>YInsights uses YouTube API Services to provide you with content analysis capabilities. By using our service, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a>.</p>
+                    
+                    <p>Additionally, your use of the Service is subject to Google's Privacy Policy (<a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a>), which will be incorporated into these Terms. YInsights will handle YouTube data in accordance with YouTube API Services Terms of Service.</p>
+                    
+                    <h2 class="h4 mt-4">3. Service Description</h2>
+                    <p>YInsights is a content analysis platform that provides AI-powered summaries, key points, topic identification, and sentiment analysis for YouTube videos. The Service adds value to YouTube content by:</p>
+                    <ul>
+                        <li>Generating concise summaries of video content</li>
+                        <li>Extracting key points and topics</li>
+                        <li>Performing sentiment analysis</li>
+                        <li>Creating relationship networks between related videos</li>
+                    </ul>
+                    
+                    <h2 class="h4 mt-4">4. Content Ownership & Intellectual Property</h2>
+                    <p>YInsights respects the intellectual property rights of content creators and YouTube:</p>
+                    <ul>
+                        <li>All YouTube content remains the property of its respective owners and YouTube</li>
+                        <li>YInsights does not claim ownership over any YouTube content</li>
+                        <li>Analysis results are derived works created by our service</li>
+                        <li>YInsights maintains proper attribution to YouTube as the source of the content</li>
+                    </ul>
+                    
+                    <h2 class="h4 mt-4">5. Data Handling</h2>
+                    <p>In accordance with YouTube API Services terms:</p>
+                    <ul>
+                        <li>YInsights temporarily stores YouTube data (metadata and transcripts) for up to 5 days (well within the 30-day limit imposed by YouTube)</li>
+                        <li>We do not download, store, or cache YouTube audiovisual content</li>
+                        <li>We do not use YouTube data to create competing video hosting platforms</li>
+                        <li>We do not sell or distribute YouTube data to third parties</li>
+                    </ul>
+                    
+                    <h2 class="h4 mt-4">6. Prohibited Activities</h2>
+                    <p>When using YInsights, you agree not to:</p>
+                    <ul>
+                        <li>Violate any laws or regulations</li>
+                        <li>Circumvent or modify any security features of the Service</li>
+                        <li>Use the Service to access or analyze content that violates YouTube's Terms of Service</li>
+                        <li>Attempt to scrape or bulk download content from the Service</li>
+                        <li>Use the Service to develop competing products that use YouTube content</li>
+                    </ul>
+                    
+                    <h2 class="h4 mt-4">7. Limitation of Liability</h2>
+                    <p>YInsights is provided "as is" without warranties of any kind. We are not responsible for:</p>
+                    <ul>
+                        <li>The accuracy of AI-generated analysis, which should be treated as supplementary to the original content</li>
+                        <li>Content available through YouTube that may be inaccurate, offensive, or illegal</li>
+                        <li>The availability of YouTube content or API services</li>
+                        <li>Any damages arising from your use or inability to use the Service</li>
+                    </ul>
+                    
+                    <h2 class="h4 mt-4">8. Service Modifications</h2>
+                    <p>We reserve the right to modify, suspend, or discontinue any part of the Service at any time without prior notice.</p>
+                    
+                    <h2 class="h4 mt-4">9. Termination</h2>
+                    <p>We may terminate or suspend your access to the Service immediately, without prior notice or liability, for any reason, including breach of the Terms.</p>
+                    
+                    <h2 class="h4 mt-4">10. Changes to Terms</h2>
+                    <p>We reserve the right to modify these Terms at any time. We will provide notice of significant changes by updating the "Last updated" date at the top of these Terms.</p>
+                    
+                    <h2 class="h4 mt-4">11. Governing Law</h2>
+                    <p>These Terms shall be governed by the laws of [Your Jurisdiction], without regard to its conflict of law principles.</p>
+                    
+                    <h2 class="h4 mt-4">12. Contact Information</h2>
+                    <p>If you have any questions about these Terms, please contact us at:</p>
+                    <p>[Your Contact Information]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border-radius: 12px;
+    }
+    
+    .card-header {
+        background: var(--gradient-primary);
+        color: white;
+    }
+    
+    h2.h4, h3.h5 {
+        color: var(--accent-primary);
+        margin-top: 1.5rem;
+    }
+    
+    ul li {
+        margin-bottom: 0.5rem;
+    }
+    
+    a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

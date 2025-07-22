@@ -8,12 +8,18 @@ from typing import List, Optional
 
 from db import get_db
 import config
+import threading
+import time
 from models.video import Video
 from models.video_summary import VideoSummary
 from repositories.video_repository import VideoRepository
 from services.youtube_service import YouTubeService
 from services.transcription_service import TranscriptionService
 from services.analysis_service import AnalysisService
+
+
+
+
 
 # Helper function for formatting video duration
 def format_duration(seconds):

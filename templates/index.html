@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}YouTube Content Analyzer{% endblock %}
+{% block title %}YInsights - YouTube Content Analysis Platform{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -9,18 +9,25 @@
         <div class="hero-content">
             <div class="row align-items-center">
                 <div class="col-lg-7">
-                    <h1>Discover Insights in <span class="gradient-text">Video Content</span></h1>
-                    <p class="lead mb-4">Analyze any YouTube video with AI to get summaries, key points, topics, and sentiment analysis in seconds.</p>
+                    <h1>Discover Insights in <span class="gradient-text">YouTube Videos</span></h1>
+                    <p class="lead mb-4">Analyze YouTube content with AI to get summaries, key points, topics, and sentiment analysis in seconds.</p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="/search" class="btn btn-primary">
                             <i class="fas fa-search me-2"></i> Analyze a Video
                         </a>
-                        <!-- Removed the Explore Content Network button -->
+                        <a href="/network" class="btn btn-outline">
+                            <i class="fas fa-project-diagram me-2"></i> Explore Content Network
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- YouTube API Attribution Notice -->
+    <div class="alert alert-info mt-4">
+        <p class="mb-0"><i class="fas fa-info-circle me-2"></i> This service uses YouTube API Services to analyze content. By using YInsights, you agree to YouTube's <a href="https://www.youtube.com/t/terms" target="_blank">Terms of Service</a>.</p>
+    </div>
 
     <!-- Recent Analyses Section -->
     <section class="mt-5">
@@ -48,7 +55,7 @@
                     <div class="video-actions">
                         <a href="/video/{{ video.id }}" class="btn btn-sm btn-primary">View Analysis</a>
                         <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" class="btn btn-sm btn-outline">
-                            <i class="fab fa-youtube"></i> Watch
+                            <i class="fas fa-external-link-alt"></i> Watch on YouTube
                         </a>
                     </div>
                 </div>
@@ -126,7 +133,7 @@
                         <h3 class="card-title mb-3">
                             <i class="fas fa-chart-pie me-2 text-accent"></i> Content Analysis
                         </h3>
-                        <p>Our AI-powered analysis extracts key insights from any YouTube video, breaking down complex content into summaries, key points, and topics.</p>
+                        <p>Our AI-powered analysis extracts key insights from YouTube videos, breaking down complex content into summaries, key points, and topics.</p>
                         <ul class="feature-list">
                             <li>Concise summaries of video content</li>
                             <li>Key points with timestamps</li>
@@ -138,23 +145,41 @@
                 </div>
             </div>
             
-            <!-- Removed the Content Network section -->
             <div class="col-md-6 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
                         <h3 class="card-title mb-3">
-                            <i class="fas fa-brain me-2 text-accent"></i> AI-Powered Insights
+                            <i class="fas fa-project-diagram me-2 text-accent"></i> Content Network
                         </h3>
-                        <p>Leveraging advanced AI technology to extract meaningful insights from any YouTube video. Save time and get the most important information at a glance.</p>
+                        <p>Explore connections between related videos with our interactive network visualization. Discover content relationships and uncover valuable insights.</p>
                         <ul class="feature-list">
-                            <li>Powered by Claude AI technology</li>
-                            <li>Automatic transcript extraction</li>
-                            <li>Intelligent content summarization</li>
-                            <li>Accurate sentiment analysis</li>
+                            <li>Interactive network visualization</li>
+                            <li>Content relationship mapping</li>
+                            <li>Discover related videos</li>
+                            <li>Explore content connections</li>
                         </ul>
-                        <a href="/search" class="btn btn-outline mt-3">Try it Now</a>
+                        <a href="/network" class="btn btn-outline mt-3">Explore Network</a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Privacy Notice -->
+    <section class="mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Data & Privacy</h2>
+            </div>
+            <div class="card-body">
+                <p>YInsights respects your privacy and the YouTube Terms of Service:</p>
+                <ul>
+                    <li>We temporarily store YouTube metadata (but not video files) for up to 5 days</li>
+                    <li>We access transcripts for analysis purposes only</li>
+                    <li>All video content remains property of the respective owners and YouTube</li>
+                    <li>YInsights is not affiliated with YouTube/Google</li>
+                </ul>
+                <p>For more information, please see our <a href="/privacy">Privacy Policy</a> and <a href="/terms">Terms of Service</a>.</p>
             </div>
         </div>
     </section>
@@ -292,6 +317,19 @@
     
     .empty-state-icon {
         color: var(--text-muted);
+    }
+
+    /* YouTube attribution styling */
+    .youtube-attribution {
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    
+    .youtube-attribution p {
+        margin-bottom: 5px;
+        font-size: 0.9rem;
     }
 </style>
 {% endblock %}

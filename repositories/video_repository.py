@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
@@ -528,3 +528,38 @@ class VideoRepository:
             "nodes": nodes,
             "edges": edges
         }
+    def cleanup_expired_data(self):
+        """
+        Remove video data older than 5 days to comply with YouTube API terms.
+        
+        Returns:
+            int: Number of videos cleaned up
+        """
+        try:
+            # Calculate the cutoff date (5 days ago)
+            cutoff_date = datetime.utcnow() - timedelta(days=5)
+            
+            # Find videos older than the cutoff date
+            expired_videos = self.db.query(Video).filter(
+                Video.created_at < cutoff_date
+            ).all()
+            
+            count = 0
+            for video in expired_videos:
+                # Delete associated summary if it exists
+                if video.summary:
+                    self.db.delete(video.summary)
+                
+                # Delete the video
+                self.db.delete(video)
+                count += 1
+            
+            if count > 0:
+                self.db.commit()
+                logger.info(f"Cleaned up {count} videos older than 5 days")
+            
+            return count
+        except Exception as e:
+            logger.error(f"Error cleaning up expired data: {str(e)}")
+            self.db.rollback()
+            return 0

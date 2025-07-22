@@ -1,0 +1,48 @@
+															
+															YINSIGHTS: FEATURE OVERVIEW & ROADMAP
+
+
+Current Features ✅
+
+1. Core Analysis Capabilities
+-AI-Powered Video Analysis: Comprehensive content understanding using Claude AI
+-Intelligent Summaries: Both concise and detailed summaries of video content
+-Key Point Extraction: Automatically identifies and extracts the most important takeaways
+-Topic Classification: Categorizes content with confidence scores
+-Sentiment Analysis: Evaluates tone and emotional content with visual indicators
+
+Future Features 🚀
+
+1. Smart Navigation - Direct links from key points to specific video moments
+2. Personalized Analysis -  Specify what aspects to focus on in the video
+3. Save, Share & Reuse - Save favorite analyses for later reference
+4. Follow-up Actions  - sk follow-up questions about analyzed content
+
+
+Advanced Features
+
+1. Multi-Platform Support  - Support for Vimeo, TikTok, Twitch, [Live Stream, Pod cast]
+2. Multi-LLM Support: Integration with GPT-4, local models, and specialized AI
+
+------------------------------------------------------------------------------------------------
+
+													TECH STACK OVERVIEW
+
+
+Frontend - HTML, CSS, JAVASCRIPT
+Backend - Framework(FastApi), ORM(SQLAlchemy)
+Database - SQLite
+External APIs & Services - YouTube Data API, Anthropic Claude API, YouTube Transcript API
+
+Key Components:
+
+1. Transcription Service - a)YouTube Transcript API as primary method
+							b)Fallback to auto-generated captions
+							c)Additional fallbacks using yt-dlp and pytube
+2. Analysis Service -  a)Category detection for specialized analysis
+						b)Content chunking for handling large transcripts
+						c)Sentiment analysis
+						d)Topic extraction
+						e)key point indentification
+
+----------------------------------------------------------------------------------------

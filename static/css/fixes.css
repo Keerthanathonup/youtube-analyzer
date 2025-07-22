@@ -422,6 +422,24 @@ a[href*="analyze"]::before,
     background-color: rgba(232, 62, 140, 0.1) !important;
     text-decoration: none;
   }
+
+    /* Hide any logo icons */
+  .logo svg, 
+  .logo i, 
+  .logo img {
+      display: none !important;
+  }
+
+  /* Style the text-only logo */
+  .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #e83e8c, #6f42c1);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 0.5px;
+  }
   
   /* Media queries for responsive design */
   @media (max-width: 768px) {
